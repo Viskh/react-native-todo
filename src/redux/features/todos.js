@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const initialState = {
   todos: [],
   loading: false,
@@ -98,10 +100,17 @@ export const todosReducer = (state = initialState, action) => {
 };
 
 export const loadTodos = () => {
-  return async (dispatch) => {
-    dispatch({ type: "load/todos/pending" });
+  return async (dispatch, getState) => {
     try {
-      const res = await fetch("https://todo-rn-back.herokuapp.com/todos");
+      dispatch({ type: "load/todos/pending" });
+      
+      const token = await AsyncStorage.getItem("token");
+
+      const res = await fetch("https://todo-rn-back.herokuapp.com/todos", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const todos = await res.json();
 
       dispatch({ type: "load/todos/fulfilled", payload: todos });
@@ -113,11 +122,17 @@ export const loadTodos = () => {
 
 export const addTodo = (text) => {
   return async (dispatch) => {
-    dispatch({ type: "add/todo/pending" });
     try {
+      dispatch({ type: "add/todo/pending" });
+      
+      const token = await AsyncStorage.getItem("token");
+
       const res = await fetch("https://todo-rn-back.herokuapp.com/todos", {
         method: "POST",
-        headers: { "Content-type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-type": "application/json",
+        },
         body: JSON.stringify({ text: text }),
       });
       const todo = await res.json();
@@ -130,10 +145,16 @@ export const addTodo = (text) => {
 
 export const deleteTodo = (id) => {
   return async (dispatch) => {
-    dispatch({ type: "delete/todo/pending" });
     try {
+      dispatch({ type: "delete/todo/pending" });
+
+      const token = await AsyncStorage.getItem("token");
+
       await fetch(`https://todo-rn-back.herokuapp.com/todos/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       dispatch({ type: "delete/todo/fulfilled", payload: id });
@@ -147,11 +168,15 @@ export const updateTodo = (id, completed) => {
   return async (dispatch) => {
     try {
       dispatch({ type: "update/todo/pending" });
+      
+      const token = await AsyncStorage.getItem("token");
+
       const res = await fetch(
         `https://todo-rn-back.herokuapp.com/todos/${id}`,
         {
           method: "PATCH",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-type": "application/json",
           },
           body: JSON.stringify({
